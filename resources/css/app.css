@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: #0B0F14;
+    --surface: #11161D;
+    --surface-elevated: #161C24;
+    --border: #232A33;
+    --text: #E6EAF0;
+    --muted: #8A94A6;
+    --accent: #34D399;
+}
+
+html.light {
+    --background: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-elevated: #F5F5F5;
+    --border: #E2E8F0;
+    --text: #0F172A;
+    --muted: #64748B;
+    --accent: #059669;
+}
+
+html {
+    color-scheme: dark;
+}
+
+html.light {
+    color-scheme: light;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+}
+
+@layer base {
+    * {
+        @apply border-[var(--border)];
+    }
+
+    ::selection {
+        @apply bg-emerald-500/30;
+    }
+}
+
+@layer components {
+    .surface {
+        @apply bg-[var(--surface)];
+    }
+
+    .surface-elevated {
+        @apply bg-[var(--surface-elevated)];
+    }
+
+    .text-muted {
+        color: var(--muted);
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface-elevated)] focus:outline-none focus:ring-2 focus:ring-emerald-400/40 disabled:opacity-50;
+    }
+
+    .input {
+        @apply w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500;
+    }
+}
+
+.prose pre {
+    @apply rounded-lg bg-[var(--surface-elevated)] p-4 font-mono text-sm;
+}
+
+.prose code {
+    @apply rounded bg-[var(--surface-elevated)] px-1 py-0.5 font-mono text-sm;
+}
+
+.prose img {
+    @apply rounded-lg;
+}
+
+html.light .prose pre {
+    @apply bg-slate-100;
+}
+
+html.light .prose code {
+    @apply bg-slate-100;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #232A33;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+}
