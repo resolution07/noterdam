@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, Link } from '@inertiajs/vue3';
 import GuestLayout from '@/Layouts/Guest.vue';
 import Input from '@/Components/Input.vue';
 import Label from '@/Components/Label.vue';
@@ -55,6 +55,13 @@ const submit = () => {
                     Войти
                 </Button>
             </form>
+
+            <p class="text-center text-sm text-[var(--muted)]">
+                Нет аккаунта?
+                <Link :href="route('register')" class="text-emerald-500 hover:text-emerald-400 hover:underline">
+                    Зарегистрироваться
+                </Link>
+            </p>
         </div>
     </GuestLayout>
 </template>
