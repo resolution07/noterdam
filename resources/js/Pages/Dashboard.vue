@@ -15,6 +15,7 @@ import Modal from '@/Components/Modal.vue';
 import Input from '@/Components/Input.vue';
 import Label from '@/Components/Label.vue';
 import Button from '@/Components/Button.vue';
+import InteractiveCat from '@/Components/InteractiveCat.vue';
 import type { Project } from '@/types';
 
 const props = defineProps<{
@@ -171,5 +172,7 @@ const archive = (project: Project) => {
                 </div>
             </form>
         </Modal>
+
+        <InteractiveCat />
     </AuthenticatedLayout>
 </template>
