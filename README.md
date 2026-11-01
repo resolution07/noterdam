@@ -208,8 +208,10 @@ docker compose -f docker/compose.prod.yaml exec app php artisan user:create
 |---|---|
 | `make up` | Поднять dev-стек |
 | `make down` | Остановить dev-стек |
+| `make dev-restart` | Перезапустить dev-стек с очисткой кеша и пересборкой фронтенда |
 | `make build` | Собрать prod-образ |
 | `make prod-up` | Поднять prod-стек с пересборкой |
+| `make prod-restart` | Перезапустить prod-стек с миграциями, очисткой и оптимизацией кеша |
 | `make migrate` | Выполнить миграции в prod |
 | `make test` | Запустить Pest |
 | `make lint` | Pint + ESLint/Prettier |

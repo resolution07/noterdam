@@ -3,6 +3,13 @@
 Все заметные изменения проекта. Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии следуют [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.3.0] — 2026-11-02
+
+### Добавлено
+
+- Команды `make dev-restart` и `make prod-restart` для перезапуска окружения со сбросом кеша и пересборкой фронтенда.
+- Обновлена документация `README.md`: описание новых команд в таблице `Makefile`.
+
 ## [1.2.0] — 2026-11-02
 
 ### Добавлено
@@ -48,4 +55,7 @@
 - README с локальным запуском, развёртыванием, настройкой Traefik/Keenetic, бэкапами и обновлением.
 - Техническое задание и описание архитектуры в `app.md`.
 
+[1.3.0]: https://github.com/resolution07/noterdam/releases/tag/v1.3.0
+[1.2.0]: https://github.com/resolution07/noterdam/releases/tag/v1.2.0
+[1.1.0]: https://github.com/resolution07/noterdam/releases/tag/v1.1.0
 [1.0.0]: https://github.com/resolution07/noterdam/releases/tag/v1.0.0
