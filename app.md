@@ -58,7 +58,7 @@
 | `editor` | CRUD заметок и вложений |
 | `viewer` | Чтение заметок, скачивание вложений |
 
-Доступ к заметке наследуется от проекта. Гость — только `/login` и `/register` (регистрация invite-only, см. § 15).
+Доступ к заметке наследуется от проекта. Гость — только `/login` и `/register` (регистрация открытая).
 
 ---
 
@@ -80,7 +80,7 @@
 
 **personal_access_tokens** — стандартная Sanctum.
 
-**invites** — id, code (unique), email (nullable, ограничивает регистрацию), created_by (FK users), used_at, expires_at, timestamps
+**invites** — id, code (unique), email (nullable), created_by (FK users), used_at, expires_at, timestamps (устарела; больше не используется для регистрации)
 
 ---
 
@@ -88,7 +88,7 @@
 
 ### 5.1 Аутентификация
 
-- **Регистрация invite-only**: Breeze-регистрация доступна только по URL `/register?invite=<code>` или `/register/<code>`; без валидного инвайта — 404. Первый пользователь создаётся artisan-командой `php artisan user:create` (name, email, password интерактивно или через options) и получает `is_admin=true`.
+- **Регистрация открытая**: любой гость может создать аккаунт по URL `/register`. Первый пользователь создаётся artisan-командой `php artisan user:create` (name, email, password интерактивно или через options) и получает `is_admin=true`.
 - Login (email/пароль, rate limit 5/мин), logout.
 - Профиль: имя, email, пароль.
 - Sanctum PAT — в настройках (`/settings/tokens`), используются только для `/api/*`.
@@ -125,7 +125,7 @@ Drag-and-drop + кнопка. Лимиты: 50 МБ/файл, 500 МБ/заме�
 ### Web (Inertia, `web` middleware)
 
 ```
-GET  /register/{code?}  POST /register    — invite-only
+GET  /register  POST /register    — открытая регистрация
 GET  /login             POST /login       — rate limit 5/мин
 POST /logout
 
@@ -429,7 +429,7 @@ FILESYSTEM_DISK=local
 ATTACHMENT_MAX_SIZE=52428800
 ATTACHMENT_MAX_TOTAL=524288000
 
-REGISTRATION_MODE=invite
+REGISTRATION_MODE=open
 BACKUP_RETENTION_DAYS=14
 
 OCTANE_SERVER=frankenphp
@@ -444,7 +444,7 @@ LOG_LEVEL=info
 ## 10. Разработка, CI/CD, документация
 
 - Pint (PHP), ESLint + Prettier (TS/Vue). Pest.
-- Feature-тесты: auth (invite-only), policies (owner/editor/viewer), upload (limits, blacklist, finfo), share, search, **`X-Forwarded-Proto: https` → `Request::isSecure() === true`, `URL::to('/')` начинается с `https://`, Inertia-редирект отдаёт `https://`-URL**.
+- Feature-тесты: auth (открытая регистрация), policies (owner/editor/viewer), upload (limits, blacklist, finfo), share, search, **`X-Forwarded-Proto: https` → `Request::isSecure() === true`, `URL::to('/')` начинается с `https://`, Inertia-редирект отдаёт `https://`-URL**.
 - CI-заготовки: `.github/workflows/ci.yml` (lint + test + build assets), `.github/workflows/build.yml` (сборка/пуш `noterdam:prod` в registry).
 - `.editorconfig`, `.gitignore` (исключить `storage/app/attachments/*`, `storage/logs/*`, `.env`, `node_modules`, `vendor`, `public/build`).
 - **`scripts/backup.sh`**: `mysqldump` (через `docker compose exec -T db`) → `tar czf` по `storage/app/attachments` → в `./backups/` с датой, ротация `BACKUP_RETENTION_DAYS`. Возвращает ненулевой код при ошибке — чтобы на хосте повесить на cron.
@@ -458,7 +458,7 @@ LOG_LEVEL=info
 5. **Проверка**: `curl -I -H 'Host: noterdam.mukashev.netcraze.pro' http://192.168.1.101` → `200/302`, не `404`; `docker logs traefik` показывает роутер `noterdam@docker`.
 6. **Бэкапы** — `make backup` + cron на хосте.
 7. **Обновление** — pull → build → up, `octane:reload`.
-8. **Приглашения** — как админ генерирует инвайт-ссылку, как приглашать в проект существующих пользователей.
+8. **Регистрация** — открытая регистрация по `/register`; первый админ через `php artisan user:create`; приглашение в проект существующих пользователей.
 
 ---
 
@@ -483,7 +483,7 @@ LOG_LEVEL=info
 6. `Makefile`, `scripts/backup.sh`.
 7. README на русском с блоками Traefik/Keenetic/бэкапы.
 8. Seeder: демо-пользователь + 1 проект + 3 заметки + теги.
-9. Pest-тесты (включая `X-Forwarded-Proto` → https, invite-flow, policies).
+9. Pest-тесты (включая `X-Forwarded-Proto` → https, auth-flow, policies).
 10. Artisan-команды: `user:create`, `invite:create`.
 11. Скриншоты/описание UI по § 7.
 
@@ -502,7 +502,7 @@ Per-note ACL, версионирование заметок, realtime, OAuth, 2F
 3. `curl -I -H 'Host: noterdam.mukashev.netcraze.pro' http://192.168.1.101` → `200/302`, не `404`.
 4. `https://noterdam.mukashev.netcraze.pro`: login проходит, ссылки `https://`, кука сессии `Secure`.
 5. Контейнер `app` не слушает `:443`, сертификатов внутри нет.
-6. Регистрация без валидного инвайта → 404. По инвайту → успешна.
+6. Регистрация доступна без инвайта; после регистрации пользователь попадает на dashboard.
 7. Два пользователя в общем проекте: owner приглашает editor, editor создаёт заметку, viewer видит, но не редактирует.
 8. Загрузка 40 МБ проходит, 60 МБ — отклоняется с понятной ошибкой.
 9. Markdown с внедрённым `<script>` не исполняется в превью.
@@ -519,7 +519,7 @@ Per-note ACL, версионирование заметок, realtime, OAuth, 2F
 | # | Вопрос | Принятое значение | Где менять |
 |---|---|---|---|
 | 1 | Домен | `noterdam.mukashev.netcraze.pro` (по аналогии с `hello.*` из ваших доков) | `APP_URL`, `APP_DOMAIN` в `.env`; Traefik `Host(...)`; `preserve-host` на Keenetic |
-| 2 | Политика регистрации | **invite-only**: первый админ через `php artisan user:create`, дальше — ссылки-инвайты из `/admin/invites` | `REGISTRATION_MODE=invite\|whitelist\|open` в `.env` (invite/whitelist реализовать, open — заглушкой) |
+| 2 | Политика регистрации | **open**: любой гость может зарегистрироваться по `/register`; первый админ создаётся через `php artisan user:create` | `REGISTRATION_MODE=open` в `.env` (переменная оставлена для совместимости) |
 | 3 | Traefik-провайдер | **docker-provider с labels** (как в вашем `hello`) | README описывает file-provider как альтернативу |
 | 4 | Подсеть `traefik` | неизвестна; дефолт `TRUSTED_PROXIES=172.16.0.0/12,10.0.0.0/8,192.168.0.0/16` — покрывает все типичные Docker/LAN | сузить до конкретной подсети после `docker network inspect traefik` |
 | 5 | Масштаб | 1–10 пользователей, сотни заметок | при росте — миграция поиска на FULLTEXT ngram, индексы уже заложены |

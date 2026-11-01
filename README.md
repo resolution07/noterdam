@@ -178,7 +178,13 @@ docker compose -f docker/compose.prod.yaml up -d --build
 docker compose -f docker/compose.prod.yaml exec app php artisan migrate --force
 ```
 
-## Приглашения
+## Регистрация
+
+Регистрация открытая — любой пользователь может создать аккаунт по адресу:
+
+```
+https://noterdam.mukashev.netcraze.pro/register
+```
 
 ### Регистрация первого пользователя
 
@@ -187,22 +193,6 @@ docker compose -f docker/compose.prod.yaml exec app php artisan user:create
 ```
 
 Пользователь получает `is_admin=true`.
-
-### Создание инвайта
-
-Админ в UI: **Админ → Инвайты**.
-
-Или через CLI:
-
-```bash
-docker compose -f docker/compose.prod.yaml exec app php artisan invite:create --email=user@example.com
-```
-
-Ссылка для регистрации:
-
-```
-https://noterdam.mukashev.netcraze.pro/register/<code>
-```
 
 ### Приглашение в проект
 
