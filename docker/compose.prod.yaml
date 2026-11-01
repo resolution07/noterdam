@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: prod
+    image: noterdam:prod
+    container_name: noterdam-app
+    restart: unless-stopped
+    env_file: ../.env
+    expose: [80]
+    volumes:
+      - ../storage:/app/storage
+    networks: [internal, traefik]
+    depends_on:
+      db: { condition: service_healthy }
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "traefik"
+      traefik.http.routers.noterdam.rule: "Host(`${APP_DOMAIN}`)"
+      traefik.http.routers.noterdam.entrypoints: "web"
+      traefik.http.routers.noterdam.middlewares: "noterdam-proto"
+      traefik.http.services.noterdam.loadbalancer.server.port: "80"
+      traefik.http.middlewares.noterdam-proto.headers.customrequestheaders.X-Forwarded-Proto: "https"
+
+  db:
+    image: mysql:8.0
+    container_name: noterdam-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes: [db_data:/var/lib/mysql]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  scheduler:
+    image: noterdam:prod
+    container_name: noterdam-scheduler
+    restart: unless-stopped
+    command: php artisan schedule:work
+    env_file: ../.env
+    volumes:
+      - ../storage:/app/storage
+    networks: [internal]
+    depends_on: [db, app]
+
+networks:
+  internal:
+  traefik:
+    external: true
+    name: traefik
+
+volumes:
+  db_data:
