@@ -3,6 +3,12 @@
 Все заметные изменения проекта. Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии следуют [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.4.1] — 2026-11-02
+
+### Исправлено
+
+- Кнопка «Назад» в Inertia-приложении теперь возвращает на предыдущую Inertia-страницу, а не на последнюю полную загрузку: middleware `StoreInertiaPreviousUrl` запоминает переходы с заголовком `X-Inertia`.
+
 ## [1.4.0] — 2026-11-02
 
 ### Добавлено
@@ -62,6 +68,7 @@
 - README с локальным запуском, развёртыванием, настройкой Traefik/Keenetic, бэкапами и обновлением.
 - Техническое задание и описание архитектуры в `app.md`.
 
+[1.4.1]: https://github.com/resolution07/noterdam/releases/tag/v1.4.1
 [1.4.0]: https://github.com/resolution07/noterdam/releases/tag/v1.4.0
 [1.3.0]: https://github.com/resolution07/noterdam/releases/tag/v1.3.0
 [1.2.0]: https://github.com/resolution07/noterdam/releases/tag/v1.2.0
