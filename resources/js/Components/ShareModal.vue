@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { reactive, ref } from 'vue';
 import { UserPlus, X } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
 import Modal from './Modal.vue';
 import Input from './Input.vue';
 import Label from './Label.vue';
 import Button from './Button.vue';
-import type { Project, ProjectMember, User } from '@/types';
+import client from '@/api/client';
+import type { Project, ProjectMember } from '@/types';
 
 const props = defineProps<{
     show: boolean;
@@ -15,12 +17,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'close'): void;
+    (e: 'updated'): void;
 }>();
 
-const form = useForm({
+const form = reactive({
     email: '',
     role: 'viewer' as 'editor' | 'viewer',
 });
+const processing = ref(false);
 
 const roleLabels: Record<string, string> = {
     owner: 'Владелец',
@@ -28,27 +32,41 @@ const roleLabels: Record<string, string> = {
     viewer: 'Наблюдатель',
 };
 
-const submit = () => {
-    form.post(route('projects.members.store', props.project.id), {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-            emit('close');
-        },
-    });
+const submit = async () => {
+    processing.value = true;
+    try {
+        await client.post(`/projects/${props.project.id}/members`, form);
+        toast.success('Участник добавлен');
+        form.email = '';
+        form.role = 'viewer';
+        emit('updated');
+        emit('close');
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Ошибка добавления участника');
+    } finally {
+        processing.value = false;
+    }
 };
 
-const updateRole = (userId: number, role: string) => {
-    useForm({ role }).put(route('projects.members.update', [props.project.id, userId]), {
-        preserveScroll: true,
-    });
+const updateRole = async (userId: number, role: string) => {
+    try {
+        await client.put(`/projects/${props.project.id}/members/${userId}`, { role });
+        toast.success('Роль обновлена');
+        emit('updated');
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Ошибка обновления роли');
+    }
 };
 
-const remove = (userId: number) => {
+const remove = async (userId: number) => {
     if (!confirm('Удалить участника из проекта?')) return;
-    useForm({}).delete(route('projects.members.destroy', [props.project.id, userId]), {
-        preserveScroll: true,
-    });
+    try {
+        await client.delete(`/projects/${props.project.id}/members/${userId}`);
+        toast.success('Участник удалён');
+        emit('updated');
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Ошибка удаления участника');
+    }
 };
 </script>
 
@@ -63,7 +81,7 @@ const remove = (userId: number) => {
             <form class="flex items-end gap-2" @submit.prevent="submit">
                 <div class="flex-1">
                     <Label for="share-email">Email</Label>
-                    <Input id="share-email" v-model="form.email" type="email" :error="form.errors.email" />
+                    <Input id="share-email" v-model="form.email" type="email" />
                 </div>
                 <div>
                     <Label for="share-role">Роль</Label>
@@ -76,7 +94,7 @@ const remove = (userId: number) => {
                         <option value="viewer">Наблюдатель</option>
                     </select>
                 </div>
-                <Button type="submit" :disabled="form.processing">
+                <Button type="submit" :disabled="processing">
                     <UserPlus class="h-4 w-4" /> Добавить
                 </Button>
             </form>

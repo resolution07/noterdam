@@ -19,12 +19,40 @@ services:
     networks: [internal]
     depends_on:
       db: { condition: service_healthy }
+      node: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/up"]
       interval: 30s
       timeout: 3s
       start_period: 10s
       retries: 3
+
+  node:
+    image: node:20-alpine
+    container_name: noterdam-node-dev
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ..:/app
+      - node_modules:/app/node_modules
+    networks: [internal]
+    command: >
+      sh -c "
+        npm ci --no-audit --prefer-offline &&
+        echo 'http://localhost:5173' > /app/public/hot &&
+        npm run dev
+      "
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:5173/@vite/client', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      start_period: 60s
+      retries: 15
 
   db:
     image: mysql:8.0
@@ -49,3 +77,4 @@ networks:
 
 volumes:
   db_data:
+  node_modules:

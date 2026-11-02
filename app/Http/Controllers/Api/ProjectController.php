@@ -3,67 +3,88 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Project\StoreProjectRequest;
+use App\Http\Requests\Project\UpdateProjectRequest;
 use App\Models\Project;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        return $request->user()->projects()
+        $filter = $request->input('filter', 'active');
+
+        $projects = Project::with(['owner', 'members'])
             ->withCount('notes')
+            ->visibleTo($request->user())
+            ->when($filter === 'archived', fn ($q) => $q->where('is_archived', true))
+            ->when($filter !== 'archived', fn ($q) => $q->where('is_archived', false))
             ->orderByDesc('updated_at')
             ->get();
+
+        return response()->json(['data' => $projects]);
     }
 
-    public function store(Request $request)
+    public function store(StoreProjectRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'description' => ['nullable', 'string'],
-            'color' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
+        $data['slug'] = $this->uniqueSlug($data['name']);
 
         $project = $request->user()->ownedProjects()->create($data);
+        $project->load(['owner', 'members'])->loadCount('notes');
 
-        return response()->json($project, 201);
+        return response()->json(['data' => $project], 201);
     }
 
-    public function show(Request $request, Project $project)
+    public function show(Request $request, Project $project): JsonResponse
     {
-        if (! $project->isMember($request->user())) {
-            abort(403);
-        }
+        $this->authorize('view', $project);
 
-        return $project->load('members');
+        $project->load(['owner', 'members'])->loadCount('notes');
+
+        return response()->json(['data' => $project]);
     }
 
-    public function update(Request $request, Project $project)
+    public function update(UpdateProjectRequest $request, Project $project): JsonResponse
     {
-        if ($project->owner_id !== $request->user()->id) {
-            abort(403);
-        }
+        $project->update($request->validated());
+        $project->load(['owner', 'members'])->loadCount('notes');
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'description' => ['nullable', 'string'],
-            'color' => ['nullable', 'string'],
-            'is_archived' => ['boolean'],
-        ]);
-
-        $project->update($data);
-
-        return $project;
+        return response()->json(['data' => $project]);
     }
 
-    public function destroy(Request $request, Project $project)
+    public function destroy(Request $request, Project $project): JsonResponse
     {
-        if ($project->owner_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorize('delete', $project);
 
         $project->delete();
 
-        return response()->noContent();
+        return response()->json(['message' => 'Проект удалён.']);
+    }
+
+    public function archive(Request $request, Project $project): JsonResponse
+    {
+        $this->authorize('update', $project);
+
+        $project->update(['is_archived' => ! $project->is_archived]);
+
+        return response()->json([
+            'message' => $project->is_archived ? 'Проект архивирован.' : 'Проект разархивирован.',
+        ]);
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name);
+        $slug = $base;
+        $counter = 1;
+
+        while (Project::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$counter++;
+        }
+
+        return $slug;
     }
 }

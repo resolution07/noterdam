@@ -1,11 +1,10 @@
-.PHONY: up down dev dev-build build prod-up dev-restart prod-restart migrate test lint artisan logs shell backup
+.PHONY: up down dev dev-build build prod-up dev-restart prod-restart migrate test lint artisan logs shell backup npm npm-install
 
 up:
 	docker compose -f docker/compose.dev.yaml up -d --build
 
-# App + DB в Docker, Vite — на хосте (нужен Node.js).
+# Alias for up; Vite now runs inside the node container.
 dev: up
-	npm run dev
 
 down:
 	docker compose -f docker/compose.dev.yaml down
@@ -26,7 +25,6 @@ dev-restart:
 	rm -f public/hot
 	docker compose -f docker/compose.dev.yaml up -d --build --wait
 	docker compose -f docker/compose.dev.yaml exec -T app php artisan optimize:clear
-	docker run --rm -v $(CURDIR):/app -w /app node:20-alpine npm run build
 	@echo ""
 	@echo "--- Dev environment status ---"
 	docker compose -f docker/compose.dev.yaml ps
@@ -42,13 +40,19 @@ prod-restart:
 	@echo ""
 	@echo "--- Prod environment status ---"
 	docker compose -f docker/compose.prod.yaml ps
-	@docker compose -f docker/compose.prod.yaml exec -T app curl -sf http://localhost/up && echo "Health check: OK" || echo "Health check: FAIL"
+	@docker compose -f docker/compose.prod.yaml exec -T app wget -qO- http://localhost/up >/dev/null 2>&1 && echo "Health check: OK" || echo "Health check: FAIL"
 
 migrate:
 	docker compose -f docker/compose.prod.yaml exec app php artisan migrate --force
 
 test:
 	docker compose -f docker/compose.dev.yaml run --rm --no-deps app php artisan test
+
+npm:
+	docker compose -f docker/compose.dev.yaml run --rm node npm $(c)
+
+npm-install:
+	docker compose -f docker/compose.dev.yaml run --rm node npm ci
 
 lint:
 	docker run --rm -v $(CURDIR):/app -w /app composer:2 ./vendor/bin/pint

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { RouterLink, useRoute } from 'vue-router';
 import {
     Search,
     Settings,
@@ -13,14 +13,11 @@ import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ThemeToggle from '@/Components/ThemeToggle.vue';
 import Dropdown from '@/Components/Dropdown.vue';
-import { useFlash } from '@/Composables/useFlash';
-import { Toaster } from 'vue-sonner';
-import type { User } from '@/types';
+import { useAuthStore } from '@/stores/auth';
 
-useFlash();
-
-const page = usePage();
-const user = computed(() => page.props.auth.user as User | null);
+const auth = useAuthStore();
+const route = useRoute();
+const user = computed(() => auth.user);
 const mobileOpen = ref(false);
 
 const initials = computed(() => {
@@ -31,23 +28,25 @@ const initials = computed(() => {
         .slice(0, 2)
         .toUpperCase();
 });
+
+const logout = () => {
+    auth.logout();
+};
 </script>
 
 <template>
     <div class="min-h-screen bg-[var(--background)] text-[var(--text)]">
-        <Toaster position="top-right" rich-colors />
-
         <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur">
             <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-4">
-                    <Link :href="route('dashboard')">
+                    <RouterLink to="/">
                         <ApplicationLogo />
-                    </Link>
+                    </RouterLink>
                     <nav class="hidden items-center gap-1 md:flex">
-                        <NavLink :href="route('projects.index')" :active="route().current('projects.*')">
+                        <NavLink to="/projects" :active="route.path.startsWith('/projects')">
                             Проекты
                         </NavLink>
-                        <NavLink :href="route('search')" :active="route().current('search')">
+                        <NavLink to="/search" :active="route.path === '/search'">
                             <Search class="h-4 w-4" /> Поиск
                         </NavLink>
                     </nav>
@@ -55,13 +54,13 @@ const initials = computed(() => {
 
                 <div class="flex items-center gap-2">
                     <ThemeToggle />
-                    <Link
-                        :href="route('search')"
+                    <RouterLink
+                        to="/search"
                         class="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)] md:hidden"
                         aria-label="Поиск"
                     >
                         <Search class="h-4 w-4" />
-                    </Link>
+                    </RouterLink>
                     <Dropdown align="right">
                         <template #trigger>
                             <button
@@ -76,30 +75,28 @@ const initials = computed(() => {
                                 <p class="text-sm font-medium text-[var(--text)]">{{ user?.name }}</p>
                                 <p class="text-xs text-[var(--muted)]">{{ user?.email }}</p>
                             </div>
-                            <Link
-                                :href="route('settings.profile.edit')"
+                            <RouterLink
+                                to="/settings/profile"
                                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[var(--text)] hover:bg-[var(--surface)]"
                                 @click="close"
                             >
                                 <Settings class="h-4 w-4" /> Настройки
-                            </Link>
-                            <Link
+                            </RouterLink>
+                            <RouterLink
                                 v-if="user?.is_admin"
-                                :href="route('admin.invites.index')"
+                                to="/admin/invites"
                                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[var(--text)] hover:bg-[var(--surface)]"
                                 @click="close"
                             >
                                 <Users class="h-4 w-4" /> Инвайты
-                            </Link>
-                            <Link
-                                :href="route('logout')"
-                                method="post"
-                                as="button"
+                            </RouterLink>
+                            <button
+                                type="button"
                                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-rose-500 hover:bg-[var(--surface)]"
-                                @click="close"
+                                @click="logout(); close();"
                             >
                                 <LogOut class="h-4 w-4" /> Выйти
-                            </Link>
+                            </button>
                         </template>
                     </Dropdown>
                     <button
@@ -156,16 +153,14 @@ const initials = computed(() => {
                     </button>
                 </div>
                 <nav class="space-y-1">
-                    <NavLink :href="route('dashboard')" :active="route().current('dashboard')">Главная</NavLink>
-                    <NavLink :href="route('projects.index')" :active="route().current('projects.*')">Проекты</NavLink>
-                    <NavLink :href="route('search')" :active="route().current('search')">Поиск</NavLink>
-                    <NavLink :href="route('settings.profile.edit')" :active="route().current('settings.*')">
-                        Настройки
-                    </NavLink>
+                    <NavLink to="/" :active="route.path === '/'">Главная</NavLink>
+                    <NavLink to="/projects" :active="route.path.startsWith('/projects')">Проекты</NavLink>
+                    <NavLink to="/search" :active="route.path === '/search'">Поиск</NavLink>
+                    <NavLink to="/settings/profile" :active="route.path.startsWith('/settings')">Настройки</NavLink>
                     <NavLink
                         v-if="user?.is_admin"
-                        :href="route('admin.invites.index')"
-                        :active="route().current('admin.*')"
+                        to="/admin/invites"
+                        :active="route.path.startsWith('/admin')"
                     >
                         Инвайты
                     </NavLink>

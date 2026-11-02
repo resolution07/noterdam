@@ -1,11 +1,10 @@
 <?php
 
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\StoreInertiaPreviousUrl;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -30,13 +29,21 @@ return Application::configure(basePath: dirname(__DIR__))
             | Request::HEADER_X_FORWARDED_PORT
             | Request::HEADER_X_FORWARDED_PROTO,
         );
-
-        $middleware->web(append: [
-            HandleInertiaRequests::class,
-            StoreInertiaPreviousUrl::class,
-            AddLinkHeadersForPreloadedAssets::class,
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => 'Не авторизован.'], 401);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json(['message' => 'Доступ запрещён.'], 403);
+            }
+
+            return null;
+        });
     })->create();

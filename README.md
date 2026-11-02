@@ -2,7 +2,7 @@
 
 Self-hosted сервис проектной документации и заметок в Markdown с вложениями, разграничением доступа и шарингом проектов.
 
-- Стек: PHP 8.3, Laravel 11, Inertia.js 2, Vue 3, TailwindCSS, FrankenPHP, MySQL 8.0.
+- Стек: PHP 8.3, Laravel 11, Vue 3 SPA, REST API (Sanctum Bearer tokens), TailwindCSS, FrankenPHP, MySQL 8.0.
 - Сетевая модель: браузер → HTTPS → Keenetic (TLS terminate, preserve-host) → HTTP → Traefik :80 → HTTP → `noterdam-app:80`.
 - Приложение **не обслуживает TLS** и не содержит сертификатов. HTTPS-достиг за счёт middleware `noterdam-proto` в Traefik.
 
@@ -19,29 +19,21 @@ Self-hosted сервис проектной документации и заме
 
 ## Локальный запуск
 
-Требуется Docker Compose и Node.js 20+ для Vite на хосте.
+Требуется только Docker Compose.
 
 ```bash
 cp .env.example .env
 # для dev значения APP_URL/APP_DOMAIN/SESSION_SECURE_COOKIE переопределены в compose.dev.yaml
-make up          # app + db в Docker
-npm ci           # один раз
-npm run dev      # Vite на хосте, http://localhost:5173
-```
-
-Либо одной командой (app + db в Docker, Vite в текущем терминале):
-
-```bash
-make dev
+make up          # app + db + node (Vite) в Docker
 ```
 
 - Приложение: http://localhost
 - Vite HMR: http://localhost:5173
 - БД доступна на localhost:3306
 
-Vite намеренно не запускается в Docker: он пишет `public/hot` в общий bind-mount, и если контейнер с Vite остановлен или упал, Laravel продолжает отдавать ссылки на несуществующий dev-сервер — страница становится пустой. `make down` удаляет `public/hot`.
+Vite теперь запускается внутри контейнера `node`. `make down` останавливает все сервисы и удаляет `public/hot`, чтобы при следующем запуске Laravel не ссылался на мёртвый dev-сервер.
 
-Одновременно может работать только один Vite. Если при запуске появляется `Port 5173 is already in use`, значит dev-сервер уже запущен в другом терминале — остановите его (`Ctrl+C`) перед повторным `make dev`.
+Порт 5173 занят контейнером `node`. Если при запуске появляется `Port 5173 is already in use`, остановите стек (`make down`) и запустите заново.
 
 После первого запуска:
 
@@ -88,7 +80,7 @@ traefik.http.middlewares.noterdam-proto.headers.customrequestheaders.X-Forwarded
 traefik.http.routers.noterdam.middlewares: "noterdam-proto"
 ```
 
-**Почему это обязательно:** Traefik получает запрос по HTTP от Keenetic и по умолчанию пробрасывает `X-Forwarded-Proto: http`. Без middleware Laravel будет считать, что работает по HTTP: `Request::isSecure()` вернёт `false`, абсолютные URL в Inertia/редиректах станут `http://`, а cookie сессии не получит флаг `Secure`.
+**Почему это обязательно:** Traefik получает запрос по HTTP от Keenetic и по умолчанию пробрасывает `X-Forwarded-Proto: http`. Без middleware Laravel будет считать, что работает по HTTP: `Request::isSecure()` вернёт `false`, и абсолютные URL, генерируемые приложением (например, для скачивания вложений), будут начинаться с `http://`.
 
 ### Вариант 2: file-provider
 
@@ -142,9 +134,9 @@ curl -I -H 'Host: noterdam.mukashev.netcraze.pro' http://192.168.1.101
 В браузере:
 
 - Открой `https://noterdam.mukashev.netcraze.pro`.
-- Login должен проходить.
+- Login должен проходить и возвращать Bearer-токен.
 - Все ссылки должны начинаться с `https://`.
-- Cookie сессии должна иметь флаг `Secure`.
+- API-запросы отправляются с заголовком `Authorization: Bearer <token>`.
 
 ## Бэкапы
 
@@ -206,15 +198,17 @@ docker compose -f docker/compose.prod.yaml exec app php artisan user:create
 
 | Команда | Описание |
 |---|---|
-| `make up` | Поднять dev-стек |
+| `make up` | Поднять dev-стек (app + db + node/Vite) |
 | `make down` | Остановить dev-стек |
 | `make dev-restart` | Перезапустить dev-стек с очисткой кеша и пересборкой фронтенда |
-| `make build` | Собрать prod-образ |
-| `make prod-up` | Поднять prod-стек с пересборкой |
+| `make build` | Собрать prod-образ app |
+| `make prod-up` | Поднять prod-стек с пересборкой (node собирает assets, затем стартует app) |
 | `make prod-restart` | Перезапустить prod-стек с миграциями, очисткой и оптимизацией кеша |
 | `make migrate` | Выполнить миграции в prod |
 | `make test` | Запустить Pest |
-| `make lint` | Pint + ESLint/Prettier |
+| `make lint` | Pint + ESLint |
+| `make npm c="..."` | Выполнить npm-команду в dev-контейнере node |
+| `make npm-install` | Установить зависимости node в dev-контейнере |
 | `make artisan c="..."` | Выполнить artisan-команду в prod-контейнере |
 | `make logs` | Смотреть логи app |
 | `make shell` | Попасть в shell контейнера app |

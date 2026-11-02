@@ -3,80 +3,68 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Note\StoreNoteRequest;
+use App\Http\Requests\Note\UpdateNoteRequest;
 use App\Models\Note;
 use App\Models\Project;
 use App\Services\MarkdownService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NoteController extends Controller
 {
-    public function index(Request $request, Project $project)
+    public function index(Request $request, Project $project): JsonResponse
     {
-        if (! $project->isMember($request->user())) {
-            abort(403);
-        }
+        $this->authorize('view', $project);
 
-        return $project->notes()->with(['author', 'tags'])->get();
+        $notes = $project->notes()
+            ->with(['author', 'tags', 'attachments.uploader'])
+            ->when($request->input('q'), fn ($q, $term) => $q->search($term))
+            ->get();
+
+        return response()->json(['data' => $notes]);
     }
 
-    public function store(Request $request, Project $project)
+    public function store(StoreNoteRequest $request, Project $project): JsonResponse
     {
-        if (! in_array($project->memberRole($request->user()), ['owner', 'editor'], true)) {
-            abort(403);
-        }
-
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:200'],
-            'content' => ['nullable', 'string'],
-            'is_pinned' => ['boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['author_id'] = $request->user()->id;
         $data['content_html'] = app(MarkdownService::class)->toHtml($data['content'] ?? '');
 
         $note = $project->notes()->create($data);
+        $note->tags()->sync($data['tag_ids'] ?? []);
+        $note->load(['author', 'tags', 'attachments.uploader']);
 
-        return response()->json($note->load('author'), 201);
+        return response()->json(['data' => $note], 201);
     }
 
-    public function show(Request $request, Note $note)
+    public function show(Request $request, Note $note): JsonResponse
     {
-        if (! $note->project->isMember($request->user())) {
-            abort(403);
-        }
+        $this->authorize('view', $note);
 
-        return $note->load(['author', 'tags', 'attachments']);
+        $note->load(['author', 'tags', 'attachments.uploader']);
+
+        return response()->json(['data' => $note]);
     }
 
-    public function update(Request $request, Note $note)
+    public function update(UpdateNoteRequest $request, Note $note): JsonResponse
     {
-        if (! in_array($note->project->memberRole($request->user()), ['owner', 'editor'], true)) {
-            abort(403);
-        }
-
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:200'],
-            'content' => ['nullable', 'string'],
-            'is_pinned' => ['boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['content_html'] = app(MarkdownService::class)->toHtml($data['content'] ?? '');
 
         $note->update($data);
+        $note->tags()->sync($data['tag_ids'] ?? []);
+        $note->load(['author', 'tags', 'attachments.uploader']);
 
-        return $note->load('author');
+        return response()->json(['data' => $note]);
     }
 
-    public function destroy(Request $request, Note $note)
+    public function destroy(Request $request, Note $note): JsonResponse
     {
-        $role = $note->project->memberRole($request->user());
-
-        if ($role !== 'owner' && ! ($role === 'editor' && $note->author_id === $request->user()->id)) {
-            abort(403);
-        }
+        $this->authorize('delete', $note);
 
         $note->delete();
 
-        return response()->noContent();
+        return response()->json(['message' => 'Заметка удалена.']);
     }
 }

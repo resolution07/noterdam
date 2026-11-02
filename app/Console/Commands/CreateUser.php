@@ -38,7 +38,7 @@ class CreateUser extends Command
             'settings' => ['theme' => 'dark'],
         ]);
 
-        $this->info("User [{$user->email}] created. Admin: " . ($user->is_admin ? 'yes' : 'no'));
+        $this->info("User [{$user->email}] created. Admin: ".($user->is_admin ? 'yes' : 'no'));
 
         return self::SUCCESS;
     }

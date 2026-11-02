@@ -1,18 +1,15 @@
 <?php
 
-it('renders the registration page', function () {
-    $this->get(route('register'))->assertOk();
-});
-
-it('registers a new user', function () {
-    $response = $this->post(route('register'), [
+it('registers a new user via api', function () {
+    $response = $this->postJson('/api/register', [
         'name' => 'New User',
         'email' => 'new@example.com',
         'password' => 'password',
-        'password_confirmation' => 'password',
     ]);
 
-    $response->assertRedirect(route('dashboard'));
+    $response->assertCreated()
+        ->assertJsonStructure(['token', 'user'])
+        ->assertJsonPath('user.email', 'new@example.com');
+
     $this->assertDatabaseHas('users', ['email' => 'new@example.com']);
-    $this->assertAuthenticated();
 });

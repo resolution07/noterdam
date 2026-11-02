@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { FileText, Download, Trash2, Image as ImageIcon } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
+import client from '@/api/client';
 import type { Attachment } from '@/types';
 
 const props = defineProps<{
@@ -26,6 +28,24 @@ function formatBytes(bytes: number): string {
 
 function isImage(mime: string): boolean {
     return mime.startsWith('image/');
+}
+
+async function download(attachment: Attachment): Promise<void> {
+    try {
+        const response = await client.get(`/attachments/${attachment.id}/download`, {
+            responseType: 'blob',
+        });
+        const url = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = attachment.original_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Ошибка скачивания');
+    }
 }
 </script>
 
@@ -62,13 +82,14 @@ function isImage(mime: string): boolean {
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
-                    <a
-                        :href="route('attachments.download', attachment.id)"
+                    <button
+                        type="button"
                         class="rounded p-1.5 text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--text)]"
                         aria-label="Скачать"
+                        @click="download(attachment)"
                     >
                         <Download class="h-4 w-4" />
-                    </a>
+                    </button>
                     <button
                         v-if="canDelete"
                         type="button"

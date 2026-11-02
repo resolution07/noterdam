@@ -8,7 +8,6 @@
         "format": "prettier --write resources/js"
     },
     "devDependencies": {
-        "@inertiajs/vue3": "^2.0.0",
         "@rushstack/eslint-patch": "^1.8.0",
         "@tailwindcss/forms": "^0.5.7",
         "@tailwindcss/typography": "^0.5.12",
@@ -24,9 +23,9 @@
         "eslint": "^8.57.0",
         "eslint-plugin-vue": "^9.23.0",
         "highlight.js": "^11.9.0",
-        "laravel-vite-plugin": "^1.2.0",
         "lucide-vue-next": "^0.363.0",
         "markdown-it": "^14.1.0",
+        "pinia": "^2.1.7",
         "postcss": "^8.4.31",
         "prettier": "^3.2.5",
         "prettier-plugin-tailwindcss": "^0.5.13",
@@ -35,8 +34,8 @@
         "typescript": "^5.4.5",
         "vite": "^6.0.11",
         "vue": "^3.4.0",
+        "vue-router": "^4.3.0",
         "vue-sonner": "^1.1.2",
-        "vue-tsc": "^2.0.11",
-        "ziggy-js": "^2.1.0"
+        "vue-tsc": "^2.0.11"
     }
 }

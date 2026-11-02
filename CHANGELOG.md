@@ -3,6 +3,29 @@
 Все заметные изменения проекта. Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии следуют [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [2.0.0] — 2026-11-03
+
+### Изменено
+
+- Архитектура фронтенда: переход с Inertia.js 2 на классическое Vue 3 SPA.
+- Авторизация: сессионная auth заменена на Sanctum Bearer tokens.
+- Backend: все browser-роуты удалены, вся бизнес-логика перенесена в JSON REST API (`routes/api.php`).
+- Frontend: Inertia-страницы заменены на Vue Router views, глобальное состояние в Pinia, API-запросы через axios.
+- Удалены зависимости `inertiajs/inertia-laravel`, `tightenco/ziggy`, `laravel/breeze`.
+
+### Добавлено
+
+- API-контроллеры для auth, проектов, заметок, вложений, участников, поиска, тегов, настроек и админки.
+- `GET /api/tags` — список всех тегов для редактора заметок.
+- Скачивание вложений через axios с Bearer-токеном.
+
+### Инфраструктура
+
+- Docker: добавлен сервис `node` для dev (Vite HMR) и prod (сборка assets).
+- Dockerfile: удалён assets-stage, frontend собирается исключительно в контейнере `node`.
+- Makefile: добавлены `make npm` и `make npm-install`, `make dev` теперь alias для `make up`.
+- Обновлены `README.md` и `AGENTS.md` под новую архитектуру и Docker-окружение.
+
 ## [1.4.2] — 2026-11-02
 
 ### Исправлено
@@ -74,6 +97,7 @@
 - README с локальным запуском, развёртыванием, настройкой Traefik/Keenetic, бэкапами и обновлением.
 - Техническое задание и описание архитектуры в `app.md`.
 
+[2.0.0]: https://github.com/resolution07/noterdam/releases/tag/v2.0.0
 [1.4.1]: https://github.com/resolution07/noterdam/releases/tag/v1.4.1
 [1.4.0]: https://github.com/resolution07/noterdam/releases/tag/v1.4.0
 [1.3.0]: https://github.com/resolution07/noterdam/releases/tag/v1.3.0

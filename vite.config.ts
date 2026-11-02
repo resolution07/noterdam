@@ -1,13 +1,8 @@
 import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     plugins: [
-        laravel({
-            input: 'resources/js/app.ts',
-            refresh: true,
-        }),
         vue({
             template: {
                 transformAssetUrls: {
@@ -20,6 +15,13 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': '/resources/js',
+        },
+    },
+    build: {
+        outDir: 'public/build',
+        manifest: 'manifest.json',
+        rollupOptions: {
+            input: 'resources/js/app.ts',
         },
     },
     server: {

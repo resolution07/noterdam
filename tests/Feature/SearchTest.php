@@ -3,8 +3,9 @@
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\User;
+use Laravel\Sanctum\Sanctum;
 
-it('searches notes within user projects', function () {
+it('searches notes within user projects via api', function () {
     $user = User::factory()->create();
     $project = Project::factory()->create(['owner_id' => $user->id]);
     $note = Note::factory()->create([
@@ -13,11 +14,10 @@ it('searches notes within user projects', function () {
         'title' => 'Unique search term',
     ]);
 
-    $this->actingAs($user)
-        ->get(route('search', ['q' => 'Unique']))
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/search?q=Unique')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('Search/Index')
-            ->has('notes', 1)
-        );
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $note->id);
 });

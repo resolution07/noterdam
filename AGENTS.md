@@ -1,28 +1,28 @@
 # AGENTS.md
 
-Laravel 11 + Inertia 2 + Vue 3 monolith. UI copy is Russian; code, DB columns, and routes are English. `README.md` is the Russian deploy/run guide.
+Laravel 11 + Vue 3 SPA monolith (JSON REST API via Sanctum Bearer tokens). UI copy is Russian; code, DB columns, and routes are English. `README.md` is the Russian deploy/run guide.
 
 ## Commands (Docker-first)
 
-This environment has no `php` or `node` on `PATH`; use Docker. Dev containers are `noterdam-app-dev` and `noterdam-db-dev`, prod containers are `noterdam-app` and `noterdam-db`.
+This environment has no `php` or `node` on `PATH`; use Docker. Dev containers are `noterdam-app-dev`, `noterdam-db-dev`, and `noterdam-node-dev`; prod containers are `noterdam-app`, `noterdam-db`, and `noterdam-node`.
 
-- `make up` / `make down` — start/stop dev app+db (app `:80`, db `:3306`).
-- `make dev` — `make up`, then Vite on the host. Needs Node 20+ on the host; only one Vite can run (strict port 5173).
+- `make up` / `make down` — start/stop dev app+db+node/Vite (app `:80`, db `:3306`, Vite `:5173`).
+- `make dev` — alias for `make up`.
 - `make test` — Pest in the dev image. Tests force in-memory SQLite, so no DB service is needed.
 - Single test: `docker compose -f docker/compose.dev.yaml run --rm --no-deps app php artisan test --filter='...'` (or pass a test file path).
 - After adding a migration: `docker compose -f docker/compose.dev.yaml exec app php artisan migrate` — `make up` does not migrate.
-- `make lint` — **auto-fixes** PHP with Pint and JS/Vue with ESLint `--fix`; it is not a read-only check. Prettier is separate (`npm run format`).
-- Asset build without host Node: `docker run --rm -v "$PWD":/app -w /app node:20-alpine npm run build` (run `npm ci` first if `node_modules` is absent).
+- `make lint` — **auto-fixes** PHP with Pint and JS/Vue with ESLint `--fix`; it is not a read-only check. Prettier is separate (`make npm c="run format"`).
+- Asset build: prod `node` container builds assets automatically via `make prod-up`; dev `node` container runs `npm run dev` via `make up`.
+- `make npm c="..."` / `make npm-install` — run npm commands inside the dev `node` container.
 - `make artisan`, `make logs`, `make shell` target **prod**. For dev use `docker compose -f docker/compose.dev.yaml exec app php artisan ...`.
 - Dev Compose overrides `APP_ENV`, `APP_URL`, `APP_DOMAIN`, and `SESSION_SECURE_COOKIE`; `.env.example` defaults to `APP_ENV=production`, so editing those in `.env` will not make the dev container behave differently.
 
 ## Routing and structure
 
-- Browser routes: `routes/web.php`. API routes: `routes/api.php` (Sanctum personal access tokens only; no cookie/SPA auth).
-- `routes/auth.php` is unused Breeze leftover and is **not loaded**; password-reset/verification routes do not exist. Put auth changes in `routes/web.php`.
-- Dashboard is `GET /` named `dashboard`; there is no `/dashboard` route (`RouteServiceProvider::HOME` is stale).
-- Inertia page names map 1:1 to `resources/js/Pages/<Name>.vue` (`Inertia::render('Projects/Notes/Show')` → `Pages/Projects/Notes/Show.vue`). `@` aliases `resources/js`; Ziggy `route()` is global.
-- Shared Inertia props (`auth`, `ziggy`, `flash`, `app`) live in `app/Http/Middleware/HandleInertiaRequests.php`; add global props there.
+- `routes/web.php` now has a single catch-all route that serves the built SPA (`view('app')`) named `dashboard`; there is no `/dashboard` route.
+- All backend endpoints live in `routes/api.php` and require a Sanctum Bearer token (`auth:sanctum`), except `POST /api/login` and `POST /api/register`.
+- `routes/auth.php` is unused Breeze leftover and is **not loaded**; password-reset/verification routes do not exist.
+- Inertia middleware (`HandleInertiaRequests`, `StoreInertiaPreviousUrl`) and old web controllers have been removed; only JSON API controllers remain.
 - Authorization is project-scoped: use `Project::visibleTo()` for lists and `ProjectPolicy`/`NotePolicy` for actions. Roles are `owner`, `editor`, `viewer`; admin is a separate `can:admin` gate.
 - Attachments use the `attachments` disk (`storage/app/attachments`); size limits are in `config/noterdam.php`/`.env`, while extension allow/blacklists are in `StoreAttachmentRequest` and `AttachmentService`.
 - Scheduled commands are registered in `routes/console.php`; prod runs them via the `scheduler` service (`schedule:work`).

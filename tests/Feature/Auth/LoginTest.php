@@ -2,34 +2,36 @@
 
 use App\Models\User;
 
-it('logs in with valid credentials', function () {
+it('logs in with valid credentials via api', function () {
     $user = User::factory()->create([
         'password' => bcrypt('password'),
     ]);
 
-    $response = $this->post(route('login'), [
+    $response = $this->postJson('/api/login', [
         'email' => $user->email,
         'password' => 'password',
     ]);
 
-    $response->assertRedirect(route('dashboard'));
-    $this->assertAuthenticatedAs($user);
+    $response->assertOk()
+        ->assertJsonStructure(['token', 'user'])
+        ->assertJsonPath('user.email', $user->email);
 });
 
-it('throttles after 5 failed attempts', function () {
+it('throttles after 5 failed attempts via api', function () {
     $user = User::factory()->create();
 
     for ($i = 0; $i < 5; $i++) {
-        $this->post(route('login'), [
+        $this->postJson('/api/login', [
             'email' => $user->email,
             'password' => 'wrong',
         ]);
     }
 
-    $response = $this->post(route('login'), [
+    $response = $this->postJson('/api/login', [
         'email' => $user->email,
         'password' => 'wrong',
     ]);
 
-    $response->assertSessionHasErrors('email');
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('email');
 });

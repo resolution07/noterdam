@@ -3,20 +3,17 @@
     "name": "noterdam/noterdam",
     "type": "project",
     "description": "Self-hosted notes and project documentation service.",
-    "keywords": ["laravel", "inertia", "vue", "notes"],
+    "keywords": ["laravel", "vue", "spa", "notes"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
         "guzzlehttp/guzzle": "^7.8",
-        "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9",
-        "tightenco/ziggy": "^2.0"
+        "laravel/tinker": "^2.9"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
-        "laravel/breeze": "^2.0",
         "laravel/pail": "^1.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",

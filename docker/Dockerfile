@@ -38,19 +38,6 @@ WORKDIR /app
 COPY composer.json composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# ---------- assets ----------
-FROM node:20-alpine AS assets
-
-WORKDIR /app
-
-COPY package.json package-lock.json* ./
-RUN npm ci
-
-COPY resources ./resources
-COPY vite.config.ts tailwind.config.js postcss.config.js tsconfig.json ./
-COPY --from=vendor /app/vendor ./vendor
-RUN npm run build
-
 # ---------- dev ----------
 FROM base AS dev
 
@@ -73,7 +60,6 @@ RUN addgroup -g 1000 app \
 
 COPY --chown=app:app . /app
 COPY --chown=app:app --from=vendor /app/vendor /app/vendor
-COPY --chown=app:app --from=assets /app/public/build /app/public/build
 COPY .docker/Caddyfile /etc/frankenphp/Caddyfile
 COPY .docker/php/php.ini /usr/local/etc/php/php.ini
 COPY .docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini

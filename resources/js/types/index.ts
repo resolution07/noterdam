@@ -94,22 +94,6 @@ export interface Flash {
     error?: string | null;
 }
 
-export interface PageProps {
-    auth: {
-        user: User | null;
-    };
-    ziggy: {
-        location: string;
-        url: string;
-        port: number | null;
-        defaults: Record<string, string>;
-        routes: Record<string, { uri: string; methods: string[] }>;
-    };
-    flash: Flash;
-    app: {
-        name: string;
-        url: string;
-    };
-    errors: Record<string, string>;
-    [key: string]: unknown;
+export interface ApiResponse<T> {
+    data: T;
 }
