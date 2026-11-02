@@ -10,6 +10,7 @@ RUN apk add --no-cache \
     unzip \
     git \
     curl \
+    su-exec \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
@@ -86,8 +87,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
     && mkdir -p /app/storage/logs \
     && mkdir -p /app/storage/app/attachments \
     && chown -R app:app /app/storage /app/bootstrap/cache
-
-USER app
 
 EXPOSE 80
 
